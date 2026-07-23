@@ -1,6 +1,0 @@
-Letakkan file custom weights YOLO Anda di sini dengan nama: best.pt
-
-Sehingga path lengkapnya menjadi: models/best.pt
-
-File ini (PLACEHOLDER.txt) hanya digunakan agar folder "models" tetap
-ada di dalam arsip zip. Boleh dihapus setelah Anda meletakkan best.pt.
