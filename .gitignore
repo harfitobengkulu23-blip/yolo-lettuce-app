@@ -1,0 +1,39 @@
+# File hasil unggahan pengguna
+uploads/*
+!uploads/.gitkeep
+
+# Cache dan bytecode Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Environment variables dan secrets
+.env
+.env.*
+!.env.example
+
+# Cache/test/build artifacts
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
+
+# Editor dan sistem operasi
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Model YOLO
+# .gitignore tidak dapat memeriksa ukuran file. File best.pt saat ini boleh
+# dilacak karena ukurannya di bawah 100 MB. Jika file .pt melebihi 100 MB,
+# jangan tambahkan dengan Git biasa; gunakan Git LFS atau penyimpanan eksternal.

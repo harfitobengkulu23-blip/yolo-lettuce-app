@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Deteksi Penyakit Selada Hidroponik - YOLO</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <header class="app-header">
+      <h1>🥬 Deteksi Penyakit Tanaman Selada Hidroponik</h1>
+      <p>
+        Deteksi otomatis penyakit <strong>Chlorosis</strong> dan
+        <strong>Soft Rot</strong> menggunakan model YOLO
+      </p>
+    </header>
+
+    <!-- ====================================================== -->
+    <!-- PERINGATAN JIKA MODEL GAGAL DIMUAT (best.pt tidak ada) -->
+    <!-- ====================================================== -->
+    {% if not model_ready %}
+    <div class="alert-error">
+      ⚠️ <strong>Model tidak ditemukan / gagal dimuat.</strong><br />
+      Detail: {{ model_error }}<br />
+      Pastikan file <code>models/best.pt</code> sudah tersedia, lalu restart
+      aplikasi.
+    </div>
+    {% endif %}
+
+    <main class="container">
+      <!-- ====================================================== -->
+      <!-- NAVIGASI TAB: Upload Gambar vs Webcam Real-time -->
+      <!-- ====================================================== -->
+      <div class="tab-buttons">
+        <button class="tab-btn active" data-tab="tab-upload">
+          📁 Deteksi via Upload Gambar
+        </button>
+        <button class="tab-btn" data-tab="tab-video">
+          🎬 Deteksi via Upload Video
+        </button>
+        <button class="tab-btn" data-tab="tab-webcam">
+          🎥 Deteksi Webcam Real-time
+        </button>
+      </div>
+
+      <!-- ====================================================== -->
+      <!-- FITUR 1: UPLOAD GAMBAR -->
+      <!-- ====================================================== -->
+      <section id="tab-upload" class="tab-content active">
+        <h2>Unggah Gambar Daun Selada</h2>
+
+        <div class="upload-box">
+          <form id="upload-form">
+            <input
+              type="file"
+              id="image-input"
+              name="image"
+              accept=".jpg,.jpeg,.png"
+            />
+            <button
+              type="submit"
+              id="upload-btn"
+              {%
+              if
+              not
+              model_ready
+              %}disabled{%
+              endif
+              %}
+            >
+              🔍 Deteksi Sekarang
+            </button>
+          </form>
+          <p class="hint">Format yang didukung: JPG, JPEG, PNG</p>
+        </div>
+
+        <div id="upload-loading" class="loading hidden">
+          ⏳ Sedang memproses gambar...
+        </div>
+
+        <div class="result-area">
+          <div class="result-box">
+            <h3>Gambar Asli</h3>
+            <img
+              id="preview-image"
+              class="result-image"
+              alt="Preview gambar yang diunggah"
+            />
+          </div>
+          <div class="result-box">
+            <h3>Hasil Deteksi</h3>
+            <img
+              id="result-image"
+              class="result-image"
+              alt="Hasil deteksi YOLO"
+            />
+          </div>
+        </div>
+
+        <div class="detection-list">
+          <h3>📋 Daftar Hasil Deteksi</h3>
+          <ul id="detection-list-items">
+            <li class="empty-state">Belum ada hasil deteksi.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ====================================================== -->
+      <!-- FITUR 2: UPLOAD VIDEO                                 -->
+      <!-- ====================================================== -->
+      <section id="tab-video" class="tab-content">
+        <h2>Unggah Video Tanaman Selada</h2>
+
+        <div class="upload-box">
+          <form id="video-form">
+            <input
+              type="file"
+              id="video-input"
+              name="video"
+              accept=".mp4,.avi,.mov,.mkv"
+            />
+            <button
+              type="submit"
+              id="video-btn"
+              {%
+              if
+              not
+              model_ready
+              %}disabled{%
+              endif
+              %}
+            >
+              🔍 Proses Video
+            </button>
+          </form>
+          <p class="hint">
+            Format: MP4, AVI, MOV, MKV &nbsp;|&nbsp; Maks. 200 MB &nbsp;|&nbsp;
+            Proses memerlukan beberapa menit
+          </p>
+        </div>
+
+        <!-- Progress bar proses video -->
+        <div id="video-loading" class="hidden">
+          <p class="loading">
+            ⏳ Sedang memproses video... Harap tunggu, jangan tutup halaman ini.
+          </p>
+          <div class="progress-bar-wrapper">
+            <div class="progress-bar-fill" id="progress-bar-fill"></div>
+          </div>
+        </div>
+
+        <!-- Preview video asli yang diunggah -->
+        <div id="video-preview-area" class="hidden">
+          <h3>🎬 Video Asli</h3>
+          <video id="video-preview" class="result-video" controls></video>
+        </div>
+
+        <!-- Video hasil deteksi -->
+        <div id="video-result-area" class="hidden">
+          <h3>✅ Hasil Deteksi</h3>
+          <video id="video-result" class="result-video" controls></video>
+          <a id="video-download-link" class="download-btn" download
+            >⬇️ Download Video Hasil</a
+          >
+        </div>
+
+        <!-- Sample frame / foto contoh dari hasil deteksi video -->
+        <div id="video-samples-area" class="hidden">
+          <h3>🖼️ Contoh Frame Hasil Deteksi</h3>
+          <p class="hint">
+            4 frame yang diambil dari titik berbeda sepanjang video
+          </p>
+          <div id="video-samples-grid" class="samples-grid"></div>
+        </div>
+
+        <!-- Ringkasan statistik deteksi -->
+        <div id="video-summary-area" class="detection-list hidden">
+          <h3>📊 Ringkasan Deteksi Video</h3>
+          <p id="video-stats-text" class="hint"></p>
+          <ul id="video-summary-list"></ul>
+        </div>
+      </section>
+
+      <!-- ====================================================== -->
+      <!-- FITUR 3: WEBCAM REAL-TIME -->
+      <!-- ====================================================== -->
+      <section id="tab-webcam" class="tab-content">
+        <h2>Deteksi Real-time via Webcam</h2>
+
+        <div class="webcam-controls">
+          <button
+            id="start-webcam-btn"
+            {%
+            if
+            not
+            model_ready
+            %}disabled{%
+            endif
+            %}
+          >
+            ▶️ Mulai Webcam
+          </button>
+          <button id="stop-webcam-btn" disabled>⏹️ Hentikan Webcam</button>
+        </div>
+
+        <!-- Video asli dari webcam (disembunyikan, hanya untuk sumber frame) -->
+        <!-- Canvas overlay digunakan untuk menggambar video + bounding box -->
+        <div class="webcam-wrapper">
+          <video id="webcam-video" autoplay playsinline muted></video>
+          <canvas id="webcam-canvas"></canvas>
+        </div>
+
+        <p id="webcam-status" class="hint">
+          Klik "Mulai Webcam" untuk memulai deteksi real-time.
+        </p>
+
+        <div class="detection-list">
+          <h3>📋 Deteksi Saat Ini</h3>
+          <ul id="webcam-detection-list">
+            <li class="empty-state">Belum ada deteksi.</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <p>
+        Skripsi Deteksi Penyakit Tanaman Selada Hidroponik &middot; Model YOLO
+        (Ultralytics)
+      </p>
+    </footer>
+
+    <!-- Variabel global dikirim dari Flask ke JavaScript -->
+    <script>
+      const MODEL_READY = {{ model_ready | tojson }};
+    </script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+  </body>
+</html>
